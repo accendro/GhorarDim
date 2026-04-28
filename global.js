@@ -1,5 +1,5 @@
-        const API_URL = "https://script.google.com/macros/s/AKfycbyy96YQzl81yUzVW893x8fkYmt-kn8loEij5Tk817ejSlc_GUPFDdkM53YUWLPqv3IJyQ/exec";
-
+const API_URL = "https://script.google.com/macros/s/AKfycbyy96YQzl81yUzVW893x8fkYmt-kn8loEij5Tk817ejSlc_GUPFDdkM53YUWLPqv3IJyQ/exec";
+const STORE_ID = "GhorarDim_";
 const facebookPageUsername = "GhorarDimFibro";
 
 const LOC_INSIDE = "Inside Moulvibazar Sylhet"; 
