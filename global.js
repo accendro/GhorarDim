@@ -1,5 +1,5 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyy96YQzl81yUzVW893x8fkYmt-kn8loEij5Tk817ejSlc_GUPFDdkM53YUWLPqv3IJyQ/exec";
-const STORE_ID = "GhorarDim_";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyy96YQzl81yUzVW893x8fkYmt-kn8loEij5Tk817ejSlc_GUPFDdkM53YUWLPqv3IJyQ/exec";
+
 const facebookPageUsername = "GhorarDimFibro";
 
 const LOC_INSIDE = "Inside Moulvibazar Sylhet"; 
@@ -111,7 +111,7 @@ function isCloseMatch(typedWord, databaseString) {
 }
 
 function getUrlParam(param) { return new URLSearchParams(window.location.search).get(param); }
-function getCart() { const c = localStorage.getItem('my_cart'); return c ? JSON.parse(c) :[]; }
+function getCart() { const c = localStorage.getItem(STORE_ID + 'my_cart'); return c ? JSON.parse(c) :[]; }
 
 function addToCart(product, variant) {
     let cart = getCart();
@@ -119,7 +119,7 @@ function addToCart(product, variant) {
     if (exist) exist.variant.qty += variant.qty;
     else cart.push({ product, variant });
 
-    localStorage.setItem('my_cart', JSON.stringify(cart));
+    localStorage.setItem(STORE_ID + 'my_cart', JSON.stringify(cart));
     updateCartIcon();
 }
 
@@ -180,7 +180,7 @@ function openMessenger() {
     let refParam = 'website_home';
 
     if (currentUrl.includes('thankyou.html')) {
-        const orderId = localStorage.getItem('last_order_id');
+        const orderId = localStorage.getItem(STORE_ID + 'last_order_id');
         if (orderId) {
             message = `#WebOrder\n\nহ্যালো! আমি এইমাত্র একটি অর্ডার করেছি।\nআমার অর্ডার আইডি: ${orderId}\n\nআমি আমার অর্ডার সম্পর্কে কিছু জানতে চাচ্ছি।`;
             refParam = `order_${orderId}`;
@@ -188,7 +188,7 @@ function openMessenger() {
     }
 
     else if (currentUrl.includes('checkout.html')) {
-        const cartText = localStorage.getItem('my_cart');
+        const cartText = localStorage.getItem(STORE_ID + 'my_cart');
         if (cartText) {
             const cart = JSON.parse(cartText);
             if (cart.length > 0) {

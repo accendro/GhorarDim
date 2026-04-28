@@ -6,6 +6,7 @@
     <title>Home</title>
     <link rel="stylesheet" href="style.css">
 
+    <!-- Meta Pixel Code -->
 <script>
 !function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -21,11 +22,13 @@ fbq('track', 'PageView');
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id=1503656738058759&ev=PageView&noscript=1"
 /></noscript>
+<!-- End Meta Pixel Code -->
 
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
 <body>
 
+    <!-- Sidebar -->
     <div class="sidebar-overlay" onclick="toggleMenu()"></div>
     <div class="sidebar" id="sidebar">
         <h3>Menu</h3>
@@ -33,27 +36,36 @@ src="https://www.facebook.com/tr?id=1503656738058759&ev=PageView&noscript=1"
         <p style="padding:10px 0; border-bottom:1px solid #eee;">Women's Fashion</p>
     </div>
 
+<!-- Header with Brand Logo & Expandable Search -->
+<!-- Header with Center Brand Logo & Expandable Search -->
 <header class="top-header" style="display: flex;">
     <i class="ri-menu-line menu-btn" onclick="toggleMenu()" style="position:relative; z-index:10;"></i>
 
+    <!-- Brand Logo (Perfectly Centered) -->
+    <!-- Brand Logo (Perfectly Centered) -->
+<!-- Brand Logo (Perfectly Centered) -->
 <div class="header-brand" id="home-brand" style="position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:5px; font-weight:bold; font-size:18px; color: black;">
     <img src="Images/LOGO.png" style="height: 40px; width: auto; object-fit: contain; filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.4));">
 </div>
 
+    <!-- Search Icon (Pushed to Right) -->
     <div class="header-icons" id="home-header-icons" style="margin-left:auto; position:relative; z-index:10;">
         <i class="ri-search-line" onclick="toggleHomeSearch()"></i>
     </div>
 
+    <!-- Hidden Search Box -->
     <div class="header-search-box" id="home-search-input-box" style="display:none; flex-grow:1; margin-left:10px; background:#f0f0f0; border-radius:20px; padding:5px 15px; align-items:center; position:relative; z-index:10;">
         <input type="text" id="home-search-val" placeholder="Search products..." style="width:100%; border:none; background:transparent; outline:none; font-size:14px;">
         <i class="ri-close-line" onclick="toggleHomeSearch()" style="font-size:20px; margin-left:10px;"></i>
     </div>
 </header>
 
+<!-- Dynamic Image Banner (Controlled by JSON) -->
 <div class="promo-banner" id="home-promo-banner" style="display:none;">
     <img id="home-promo-banner-img" src="" alt="Promo Banner">
 </div>
 
+<!-- The sort bar is now automatically sticky via CSS. Initially imvisible -->
 <div class="sort-bar" style="display:none;">
 
     <div class="sort-item active">Best Match</div>
@@ -61,17 +73,20 @@ src="https://www.facebook.com/tr?id=1503656738058759&ev=PageView&noscript=1"
     <div class="sort-item" id="sort-price-btn">Price <i class="ri-expand-up-down-line" id="price-icon"></i></div>
 </div>
 
+<!-- NEW: BREADCRUMB / MAP ARC CONTAINER -->
 <div id="breadcrumb-container" style="display:none; padding: 10px 15px; font-size: 13px; background: var(--white); align-items: center; gap: 8px; margin-bottom: 5px; border-bottom: 1px solid var(--border);"></div>
 
+    <!-- THIS IS THE EMPTY BOX FOR JAVASCRIPT -->
     <div class="product-grid" id="grid">
-
+        <!-- JS will automatically put the JSON products here -->
     </div>
 
+    <!-- Bottom Nav -->
     <nav class="bottom-nav">
         <a href="index.html" class="nav-item active">
             <i class="ri-home-5-fill"></i> Home
         </a>
-
+        <!-- Message Button (Updated) -->
 <div class="nav-item" onclick="openMessenger()" style="cursor:pointer;">
     <i class="ri-message-3-line"></i> Message
 </div>
