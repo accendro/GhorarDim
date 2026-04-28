@@ -1,4 +1,4 @@
-
+const STORE_ID = "GhorarDim_";
 
 // 👉 IMPORTANT: Paste your exact Google Apps Script URL here!
         const API_URL = "https://script.google.com/macros/s/AKfycbyy96YQzl81yUzVW893x8fkYmt-kn8loEij5Tk817ejSlc_GUPFDdkM53YUWLPqv3IJyQ/exec";
