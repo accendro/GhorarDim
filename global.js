@@ -4,11 +4,11 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyy96YQzl81yUzVW893x8fk
 
 const facebookPageUsername = "GhorarDimFibro";
 
-const LOC_INSIDE = "Inside Moulvibazar Sylhet"; 
+const LOC_INSIDE = "Inside MoulviBazar District"; 
 
 const FEE_INSIDE = 80;
 
-const LOC_OUTSIDE = "Outside Moulvibazar Sylhet";
+const LOC_OUTSIDE = "Outside MoulviBazar District";
 const FEE_OUTSIDE = 130;
 
 const LINK_FACEBOOK = "https://www.facebook.com/GhorarDimFibro/";
