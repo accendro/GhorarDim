@@ -1,23 +1,17 @@
-const STORE_ID = "GhorarDim_"; 
-
+const STORE_ID = "GhorarDim_";
 const API_URL = "https://script.google.com/macros/s/AKfycbyy96YQzl81yUzVW893x8fkYmt-kn8loEij5Tk817ejSlc_GUPFDdkM53YUWLPqv3IJyQ/exec";
-
 const facebookPageUsername = "GhorarDimFibro";
-
-const LOC_INSIDE = "Inside MoulviBazar District"; 
-
+const LOC_INSIDE = "Inside MoulviBazar District";
 const FEE_INSIDE = 80;
-
 const LOC_OUTSIDE = "Outside MoulviBazar District";
 const FEE_OUTSIDE = 130;
-
 const LINK_FACEBOOK = "https://www.facebook.com/GhorarDimFibro/";
 const LINK_YOUTUBE = "";
 const LINK_TIKTOK = "";
 const LINK_PHONE = "01838167750";
 const LINK_EMAIL = "";
 const LINK_MAPS = "";
-
+const META_PIXEL_ID = "4520770804912176";
 const DATA_URL = './products.json';
 
 async function getProducts() {
@@ -77,6 +71,22 @@ async function getProducts() {
         console.error("Error fetching products:", error); 
         return []; 
     }
+}
+
+if (typeof META_PIXEL_ID !== 'undefined' && META_PIXEL_ID !== "") {
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+
+    fbq('init', META_PIXEL_ID);
+    fbq('track', 'PageView');
+} else {
+    console.warn("Meta Pixel ID is empty. Tracking disabled.");
 }
 
 function getTypoDistance(a, b) {
@@ -242,3 +252,4 @@ function openMessenger() {
 }
 
 document.addEventListener('DOMContentLoaded', updateCartIcon);
+
