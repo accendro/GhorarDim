@@ -160,15 +160,16 @@ async function loadDetails() {
     
     // PULLS LOC_INSIDE, FEE_INSIDE, ETC. AUTOMATICALLY FROM GLOBAL.JS
     document.getElementById('delivery-info').innerHTML = `
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+    <i class="ri-hand-coin-line" style="color:#4cd137; font-size:18px; margin-top:-2px;"></i>
+    <span style="font-size:13px; color:#444;"><b>প্রোডাক্ট দেখে তারপর পেমেন্ট (Cash on Delivery)</b></span>
+</div>
         <div style="display: flex; flex-direction: column; gap: 12px; padding: 5px 0;">
             <div style="display:flex; align-items:flex-start; gap:10px;">
                 <i class="ri-truck-line" style="color:var(--primary); font-size:18px; margin-top:-2px;"></i>
                 <span style="font-size:13px; color:#444;">${calculateDelivery(currentProduct.delivery_days)}</span>
             </div>
-            <div style="display:flex; align-items:flex-start; gap:10px;">
-                <i class="ri-hand-coin-line" style="color:#4cd137; font-size:18px; margin-top:-2px;"></i>
-                <span style="font-size:13px; color:#444;"><b>Cash on Delivery</b> available</span>
-            </div>
+            
             <div style="display:flex; align-items:flex-start; gap:10px;">
                 <i class="ri-map-pin-line" style="color:#ffb03a; font-size:18px; margin-top:-2px;"></i>
                 <span style="font-size:13px; color:#555; line-height: 1.5;">
