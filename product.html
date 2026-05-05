@@ -81,23 +81,31 @@ let touchendX = 0;
 let comboCount = 0;
 let isCombo = false;
 let comboSelections =[]; 
+
+// --- 1. FULL INITIALIZATION FUNCTION (WITH SMART AUTO-SELECTION) ---
 async function loadDetails() {
     let products =[];
     const MAX_RETRIES = 3;       
     const RETRY_DELAY_MS = 400;  
+
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         products = await getProducts();
         if (products.length > 0) break; 
         if (attempt < MAX_RETRIES) await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
     }
+
     currentProduct = products.find(p => String(p.id) === String(getUrlParam('id')));
+
     if (!currentProduct) {
         document.body.innerHTML = "<h2 style='text-align:center; padding: 50px;'>Product Not Found</h2>";
         return;
     }
+
     basePrice = currentProduct.price;
     selectedVariant = { color: null, size: null, qty: 1 };
     currentImageIndex = 0;
+
+    // --- DETECT COMBO FROM TAGS ---
     comboCount = 0;
     isCombo = false;
     comboSelections =[];
@@ -108,6 +116,7 @@ async function loadDetails() {
             isCombo = comboCount > 1;
         }
     }
+
     const mainImg = document.getElementById('main-img');
     const mainImgBg = document.getElementById('main-img-bg');
     if (mainImg && mainImgBg) {
@@ -118,6 +127,7 @@ async function loadDetails() {
             document.getElementById('fs-modal').classList.add('active');
         };
     }
+    
     if (!currentProduct.in_stock) {
         const imgContainer = document.querySelector('.product-image-container');
         if (imgContainer) imgContainer.insertAdjacentHTML('beforeend', `<div class="out-of-stock-badge">Out of Stock</div>`);
@@ -126,11 +136,17 @@ async function loadDetails() {
         if (buyBtn) { buyBtn.innerText = "Sold Out"; buyBtn.classList.add('btn-disabled'); buyBtn.onclick = null; }
         if (cartBtn) { cartBtn.innerText = "Unavailable"; cartBtn.classList.add('btn-disabled'); cartBtn.onclick = null; }
     }
+    
     document.querySelector('.detail-title').innerText = currentProduct.name;
     const oldPriceHtml = currentProduct.original_price ? `<span class="p-old-price">BDT ${currentProduct.original_price}</span>` : '';
+    
+    // Fallback price text (syncPriceWithImage will instantly overwrite this with the Sold badge anyway)
     document.querySelector('.detail-price').innerHTML = `BDT ${currentProduct.price} ${oldPriceHtml}`;
+    
     const modalTitleEl = document.getElementById('modal-title');
     if (modalTitleEl) modalTitleEl.innerText = currentProduct.name;
+    
+    // --- WHATSAPP-STYLE RICH TEXT FORMATTER ---
     let rawDesc = currentProduct.description ? String(currentProduct.description) : 'No description available.';
     const formattedDesc = rawDesc
         .replace(/\n/g, '<br>')                               
@@ -139,16 +155,19 @@ async function loadDetails() {
         .replace(/__(.*?)__/g, '<u>$1</u>')                   
         .replace(/\^\^(.*?)\^\^/g, '<span style="text-decoration: overline;">$1</span>') 
         .replace(/~~(.*?)~~/g, '<s>$1</s>');                  
+        
     document.getElementById('description-info').innerHTML = formattedDesc;
+    
+    // PULLS LOC_INSIDE, FEE_INSIDE, ETC. AUTOMATICALLY FROM GLOBAL.JS
     document.getElementById('delivery-info').innerHTML = `
-        <div style="display:flex; align-items:flex-start; gap:10px;">
-    <i class="ri-hand-coin-line" style="color:#4cd137; font-size:18px; margin-top:-2px;"></i>
-    <span style="font-size:13px; color:#444;"><b>Cash on Delivery Available</b></span>
-</div>
         <div style="display: flex; flex-direction: column; gap: 12px; padding: 5px 0;">
             <div style="display:flex; align-items:flex-start; gap:10px;">
                 <i class="ri-truck-line" style="color:var(--primary); font-size:18px; margin-top:-2px;"></i>
                 <span style="font-size:13px; color:#444;">${calculateDelivery(currentProduct.delivery_days)}</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:10px;">
+                <i class="ri-hand-coin-line" style="color:#4cd137; font-size:18px; margin-top:-2px;"></i>
+                <span style="font-size:13px; color:#444;"><b>Cash on Delivery</b> available</span>
             </div>
             <div style="display:flex; align-items:flex-start; gap:10px;">
                 <i class="ri-map-pin-line" style="color:#ffb03a; font-size:18px; margin-top:-2px;"></i>
@@ -160,55 +179,87 @@ async function loadDetails() {
             </div>
         </div>
     `;
+    
     const tagsContainer = document.getElementById('tags-container');
     if (tagsContainer) {
         if (currentProduct.tags && currentProduct.tags.length > 0) {
             tagsContainer.innerHTML = currentProduct.tags.map(t => `<span class="tag-pill" onclick="window.location.href='index.html?search=${encodeURIComponent(t)}'">${t}</span>`).join('');
         } else tagsContainer.innerHTML = '';
     }
+
     document.querySelector('.gallery-strip').innerHTML = currentProduct.images.map((img, i) => `
         <img src="${img}" class="thumbnail ${i===0?'active':''}" onclick="changeImage(this, ${i})">
     `).join('');
+    
     const imgContainer = document.querySelector('.product-image-container');
     if (imgContainer) {
         imgContainer.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, {passive: true});
         imgContainer.addEventListener('touchend', e => { touchendX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
     }
+
     const variantsContainer = document.getElementById('modal-variants-container');
     let modalHtml = '';
+
     const hasColors = currentProduct.colors && currentProduct.colors.length > 0;
     const hasSizes = currentProduct.sizes && currentProduct.sizes.length > 0;
+
+    // ==========================================
+    // 🧠 SMART UX: AUTO-SELECTION LOGIC
+    // ==========================================
     if (isCombo) {
-        comboSelections = Array.from({length: comboCount}, () => ({
-            color: hasColors ? null : { name: 'Default', img: currentProduct.images[0] },
-            size: hasSizes ? null : 'Default'
-        }));
+        // Build the selections array in memory first
+        comboSelections = Array.from({length: comboCount}, (_, i) => {
+            let autoColor = null;
+            if (hasColors) {
+                // Distribute colors: Item 1 gets Col 1, Item 2 gets Col 2. 
+                // Uses modulo (%) to loop safely if there are 5 items but only 2 colors.
+                autoColor = currentProduct.colors[i % currentProduct.colors.length];
+            } else {
+                autoColor = { name: 'Default', img: currentProduct.images[0] };
+            }
+            
+            // Auto-select size ONLY if there is exactly 1 size (like "Free Size")
+            let autoSize = hasSizes ? (currentProduct.sizes.length === 1 ? currentProduct.sizes[0] : null) : 'Default';
+
+            return { color: autoColor, size: autoSize };
+        });
+
         for (let i = 0; i < comboCount; i++) {
             modalHtml += `<div style="background:#ffffff; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px solid #ccc; border-left: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">`;
             modalHtml += `<p style="font-weight:bold; color:var(--primary); margin-bottom:10px; border-bottom:1px dashed #eee; padding-bottom:5px;">🛍️ Item ${i + 1}</p>`;
+            
             if (hasColors) {
                 modalHtml += `<div class="variant-section"><p class="variant-title">Color</p>`;
                 currentProduct.colors.forEach((c, cIdx) => {
-                    modalHtml += `<div class="color-option combo-color-${i}" onclick="selectComboColor(this, ${cIdx}, ${i})">
+                    // Check if this color was auto-selected by our math above
+                    let isSelected = (cIdx === (i % currentProduct.colors.length)) ? 'selected' : '';
+                    modalHtml += `<div class="color-option combo-color-${i} ${isSelected}" onclick="selectComboColor(this, ${cIdx}, ${i})">
                                     <img src="${c.img}" alt="${c.name}"> <span>${c.name}</span>
                                   </div>`;
                 });
                 modalHtml += `</div>`;
             }
+            
             if (hasSizes) {
                 modalHtml += `<div class="variant-section"><p class="variant-title">Size</p>`;
                 currentProduct.sizes.forEach((s) => {
-                    modalHtml += `<span class="size-option combo-size-${i}" onclick="selectComboSize(this, '${s}', ${i})">${s}</span>`;
+                    // Highlight size if it's the only one available
+                    let isSelected = (currentProduct.sizes.length === 1) ? 'selected' : '';
+                    modalHtml += `<span class="size-option combo-size-${i} ${isSelected}" onclick="selectComboSize(this, '${s}', ${i})">${s}</span>`;
                 });
                 modalHtml += `</div>`;
             }
             modalHtml += `</div>`;
         }
     } else {
+        // Apply the same smart UX to standard non-combo products!
         if (hasColors) {
+            // Auto-select the first color in memory
+            selectedVariant.color = currentProduct.colors[0];
             modalHtml += `<div class="variant-section"><p class="variant-title">Color</p>`;
             currentProduct.colors.forEach((c, i) => {
-                modalHtml += `<div class="color-option" onclick="selectColor(this, ${i})">
+                let isSelected = (i === 0) ? 'selected' : '';
+                modalHtml += `<div class="color-option ${isSelected}" onclick="selectColor(this, ${i})">
                                 <img src="${c.img}" alt="${c.name}"> <span>${c.name}</span>
                               </div>`;
             });
@@ -216,16 +267,26 @@ async function loadDetails() {
         } else {
             selectedVariant.color = { name: 'Default', img: currentProduct.images[0] };
         }
+        
         if (hasSizes) {
+            // Auto-select size ONLY if exactly 1 size is available
+            if (currentProduct.sizes.length === 1) {
+                selectedVariant.size = currentProduct.sizes[0];
+            } else {
+                selectedVariant.size = null;
+            }
+
             modalHtml += `<div class="variant-section"><p class="variant-title">Size</p>`;
             currentProduct.sizes.forEach((s) => {
-                modalHtml += `<span class="size-option" onclick="selectSize(this, '${s}')">${s}</span>`;
+                let isSelected = (currentProduct.sizes.length === 1) ? 'selected' : '';
+                modalHtml += `<span class="size-option ${isSelected}" onclick="selectSize(this, '${s}')">${s}</span>`;
             });
             modalHtml += `</div>`;
         } else {
             selectedVariant.size = 'Default';
         }
     }
+
     modalHtml += `
     <div class="variant-section" style="margin-top:15px; padding-top:10px; border-top:1px solid #eee;">
         <p class="variant-title">${isCombo ? "Combo Quantity (Sets)" : "Quantity"}</p>
@@ -235,7 +296,9 @@ async function loadDetails() {
             <button class="qty-btn" onclick="updateQty(1)">+</button>
         </div>
     </div>`;
+
     variantsContainer.innerHTML = modalHtml;
+
     const colorPreviewInfo = document.getElementById('color-preview-info');
     const colorPreviewList = document.getElementById('color-preview-list');
     if (hasColors) {
@@ -250,14 +313,21 @@ async function loadDetails() {
     } else { 
         if(colorPreviewInfo) colorPreviewInfo.style.display = 'none'; 
     }
+
     renderSimilarProducts(products, currentProduct);
+    
+    // IMPORTANT: Call this last, as it updates the price and injects the Sold badge
     syncPriceWithImage(currentProduct.images[0]);
+
+    // ==========================================
+    // 🚀 NEW: META PIXEL - TRACK VIEW CONTENT
+    // ==========================================
     try {
         if (typeof fbq === 'function') {
             fbq('track', 'ViewContent', {
-                content_ids:[currentProduct.id],
+                content_ids:[currentProduct.id], 
                 content_type: 'product',
-                content_name: currentProduct.name,
+                content_name: currentProduct.name, 
                 value: currentProduct.price,       
                 currency: 'BDT'
             });
@@ -266,6 +336,7 @@ async function loadDetails() {
         console.warn("Pixel tracking blocked by browser.");
     }
 }
+
 window.addEventListener('pageshow', function(event) {
     if (event.persisted) {
         window.location.reload();
