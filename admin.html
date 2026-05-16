@@ -1,3 +1,4 @@
+<!-- removed -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -209,6 +210,7 @@
 <script>
     const CACHE_KEY = "admin_orders_cache";
     const TIME_KEY = "admin_last_fetch";
+    const TIME_KEY_SYNC = "admin_last_steadfast_sync";
     let allOrders =[];
     let currentFilter = 'All';
     let selectedOrderIndex = null;
@@ -262,49 +264,56 @@
         await fetchData(true, true);
     }
     async function fetchData(force = false, isManualLogin = false) {
-        if (!adminPassword) return;
-        const now = Date.now();
-        const lastFetch = localStorage.getItem(STORE_ID + TIME_KEY) || 0;
-        const container = document.getElementById('order-container');
-        const loginError = document.getElementById('login-error');
-        if (!force && (now - lastFetch < 60000) && allOrders.length > 0) return;
-        const refreshIcon = document.getElementById('refresh-icon');
-        if (refreshIcon) refreshIcon.classList.add('animate-spin');
-        try {
-            const res = await fetch(`${API_URL}?pw=${encodeURIComponent(adminPassword)}${force ? '&sync=true' : ''}`);
-            const data = await res.json();
-            if (data.error === "Unauthorized access") throw new Error("unauth");
-            if (isManualLogin) {
-                localStorage.setItem(STORE_ID + 'admin_pw', adminPassword);
-                document.getElementById('login-screen').classList.add('hidden');
-            }
-            if (Array.isArray(data)) {
-                allOrders = data.reverse();
-                allOrders.forEach(o => { if (o.Status === 'Intake') o.Status = 'New'; });
-                localStorage.setItem(STORE_ID + CACHE_KEY, JSON.stringify(allOrders));
-                localStorage.setItem(STORE_ID + TIME_KEY, Date.now());
-                renderOrders();
-            }
-        } catch (err) {
-            if (err.message === "unauth") {
-                adminPassword = '';
-                localStorage.removeItem(STORE_ID + 'admin_pw');
-                if (isManualLogin) {
-                    loginError.innerText = "Invalid password. Access denied.";
-                    loginError.classList.remove('hidden');
-                    const btn = document.getElementById('login-btn');
-                    btn.innerHTML = `<span>Access Orders</span>`;
-                    btn.disabled = false;
-                } else {
-                    document.getElementById('login-screen').classList.remove('hidden');
-                }
-            } else {
-                if (allOrders.length === 0) container.innerHTML = `<p class="text-center text-red-500 mt-10">Network error or invalid response.</p>`;
-            }
-        } finally {
-            if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+    if (!adminPassword) return;
+    const now = Date.now();
+    const lastFetch = localStorage.getItem(STORE_ID + TIME_KEY) || 0;
+    const lastSync = localStorage.getItem(STORE_ID + TIME_KEY_SYNC) || 0;
+    const container = document.getElementById('order-container');
+    const loginError = document.getElementById('login-error');
+    if (!force && (now - lastFetch < 60000) && allOrders.length > 0) return;
+    const refreshIcon = document.getElementById('refresh-icon');
+    if (refreshIcon) refreshIcon.classList.add('animate-spin');
+    const TWELVE_HOURS = 43200000;
+    const shouldCheckSteadfast = force || (now - lastSync > TWELVE_HOURS);
+    try {
+        const fetchUrl = `${API_URL}?pw=${encodeURIComponent(adminPassword)}${shouldCheckSteadfast ? '&sync=true' : ''}`;
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+        if (data.error === "Unauthorized access") throw new Error("unauth");
+        if (isManualLogin) {
+            localStorage.setItem(STORE_ID + 'admin_pw', adminPassword);
+            document.getElementById('login-screen').classList.add('hidden');
         }
+        if (Array.isArray(data)) {
+            allOrders = data.reverse();
+            allOrders.forEach(o => { if (o.Status === 'Intake') o.Status = 'New'; });
+            localStorage.setItem(STORE_ID + CACHE_KEY, JSON.stringify(allOrders));
+            localStorage.setItem(STORE_ID + TIME_KEY, now);
+            if (shouldCheckSteadfast) {
+                localStorage.setItem(STORE_ID + TIME_KEY_SYNC, now);
+            }
+            renderOrders();
+        }
+    } catch (err) {
+        if (err.message === "unauth") {
+            adminPassword = '';
+            localStorage.removeItem(STORE_ID + 'admin_pw');
+            if (isManualLogin) {
+                loginError.innerText = "Invalid password. Access denied.";
+                loginError.classList.remove('hidden');
+                const btn = document.getElementById('login-btn');
+                btn.innerHTML = `<span>Access Orders</span>`;
+                btn.disabled = false;
+            } else {
+                document.getElementById('login-screen').classList.remove('hidden');
+            }
+        } else {
+            if (allOrders.length === 0) container.innerHTML = `<p class="text-center text-red-500 mt-10">Network error or invalid response.</p>`;
+        }
+    } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
     }
+}
     function autoSaveTrigger() {
         updateSelectColor(); 
         const indicator = document.getElementById('sync-indicator');
